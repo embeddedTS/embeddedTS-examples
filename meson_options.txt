@@ -1,0 +1,1 @@
+option('can', type: 'feature', value: 'auto', description: 'CAN example tool')
