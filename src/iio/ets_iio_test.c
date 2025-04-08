@@ -181,6 +181,25 @@ int main(int argc, char *argv[])
 	}
 
 	/* List devices available to the system if no <device> arg was provided */
+	/* XXX: TODO: This is presenting devices that are not really devices and
+	 * erroring in some cases. e.g.
+root@tsimx6ul:~# ets_iio_test 
+No devices specified.
+Available devices:
+'50000180.mikro_adc'
+'tssupervisor-adc'
+'2198000.adc'
+'tssupervisor-temp'
+'an_3p3v'
+'an_5v'
+'an_8v_48v'
+'ism330dlc_gyro'
+'ism330dlc_accel'
+'lis2mdl'
+'lis2mdl-trigger'
+Segmentation fault
+*/
+
 	if (argc == 1) {
 		fprintf(stderr, "No devices specified.\n");
 		fprintf(stderr, "Available devices:\n");
@@ -204,6 +223,35 @@ int main(int argc, char *argv[])
 	}
 
 	/* If no channels specified, list all of them */
+	/* XXX: TODO: This is still listing things like timestamp that we should
+	 * be able to parse, but cannot fully yet. e.g. 
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel
+No channels for device 'ism330dlc_accel' specified.
+Available channels:
+'accel_x'
+'accel_y'
+'accel_z'
+'timestamp'
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel accel_x timestamp
+num_channels 2
+WARNING: High-speed mode not enabled
+accel_x: raw=-231,      scaled=-0.138185
+timestamp: raw=1744146475254490671,     scaled=1744146475254490624.000000
+accel_x: raw=-208,      scaled=-0.124427
+timestamp: raw=1744146475330790671,     scaled=1744146475330790656.000000
+accel_x: raw=-237,      scaled=-0.141775
+timestamp: raw=1744146475407090671,     scaled=1744146475407090688.000000
+accel_x: raw=-219,      scaled=-0.131007
+timestamp: raw=1744146475483365671,     scaled=1744146475483365632.000000
+accel_x: raw=-222,      scaled=-0.132802
+timestamp: raw=1744146475559665671,     scaled=1744146475559665664.000000
+accel_x: raw=-222,      scaled=-0.132802
+timestamp: raw=1744146475635965671,     scaled=1744146475635965696.000000
+accel_x: raw=-230,      scaled=-0.137587
+timestamp: raw=1744146475712265671,     scaled=1744146475712265728.000000
+accel_x: raw=-237,      scaled=-0.141775
+timestamp: raw=1744146475788540671,     scaled=1744146475788540672.000000
+*/
 	num_channels = (argc-2);
 	if (!num_channels) {
 		fprintf(stderr, "No channels for device '%s' specified.\n", argv[1]);
@@ -247,14 +295,40 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// Create buffer and process samples
-	printf("num_channels %d\n", num_channels);
+	/* Create buffer and process samples */
 	buffer = iio_device_create_buffer(iio_dev, num_channels * 4, false);
 	if (buffer == NULL) {
 		perror("Unable to create buffer");
 		return errno;
 	}
 
+	/* XXX: TODO: In some instances, this fails. It seems to be related to the
+	 * number of samples somehow. e.g. if (num_channels * >4) it seems to fail.
+	 * Some combinations of channels on the commandline also result in this, e.g.
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel accel_x accel_y accel_z
+num_channels 3
+WARNING: High-speed mode not enabled
+accel_x: raw=-218,      scaled=-0.130409
+...
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel accel_x accel_y accel_z accel_x
+num_channels 4
+WARNING: High-speed mode not enabled
+Unable to fill buffer: Invalid argument
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel accel_x accel_y accel_x
+num_channels 3
+WARNING: High-speed mode not enabled
+accel_x: raw=-242,      scaled=-0.144766
+...
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel timestamp
+num_channels 1
+WARNING: High-speed mode not enabled
+Unable to create buffer: Invalid argument
+root@tsimx6ul:~# ets_iio_test ism330dlc_accel timestamp accel_x
+num_channels 2
+WARNING: High-speed mode not enabled
+accel_x: raw=-207,      scaled=-0.123828
+timestamp: raw=1744146637987063191,     scaled=1744146637987063296.000000
+*/
 	cnt = iio_buffer_refill(buffer);
 	if (cnt < 0) {
 		perror("Unable to fill buffer");
