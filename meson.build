@@ -7,6 +7,7 @@ add_project_arguments('-DRELEASE="' + meson.project_version() + '"', language: '
 
 # Get enable options
 can_opt = get_option('can')
+iio_opt = get_option('iio')
 
 # Check if any number of specific tools are enabled
 any_explicit = can_opt.enabled()
@@ -14,9 +15,14 @@ any_explicit = can_opt.enabled()
 # If no specific tools are enabled, build all, otherwise, only build what is enabled
 tool_enabled = {
   'can': can_opt.enabled() or (can_opt.auto() and not any_explicit),
+  'iio': iio_opt.enabled() or (iio_opt.auto() and not any_explicit),
 }
 
 # Add subdirectories of tools based on what is enabled
 if tool_enabled['can']
   subdir('src/can')
+endif
+
+if tool_enabled['iio']
+  subdir('src/iio')
 endif

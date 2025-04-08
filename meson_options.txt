@@ -1,1 +1,2 @@
 option('can', type: 'feature', value: 'auto', description: 'CAN example tool')
+option('iio', type: 'feature', value: 'auto', description: 'IIO example tool')
